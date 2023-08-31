@@ -1,0 +1,131 @@
+{
+  "status": "success",
+  "data": {
+    "alerts": [
+      {
+        "labels": {
+          "_type": "flake",
+          "alertname": "flake_nixpkgs_outdated",
+          "input": "nixpkgs",
+          "instance": "birne.wireguard:9100",
+          "job": "node-stats",
+          "lastModifiedDate": "20230206085943",
+          "narHash": "sha256-8hzNh1jtiPxL5r3ICNzSmpSzV7kGb3KwX+FS5BWJUTo=",
+          "outPath": "/nix/store/f6jk9gi6i92ngcbkcz8z2d7gvkksciw1-source",
+          "rev": "5a350a8f31bb7ef0c6e79aea3795a890cf7743d4",
+          "shortRev": "5a350a8"
+
+        },
+        "annotations": {
+          "description": "Nixpkgs outdated: Nixpkgs on birne.wireguard:9100 has not been updated in 30 days"
+        },
+        "state": "firing",
+        "activeAt": "2023-04-13T09:39:53.028428108Z",
+        "value": "6.722997717592727e+01"
+      },
+      {
+        "labels": {
+          "alertname": "systemd_service_failed",
+          "instance": "birne.wireguard:9100",
+          "job": "node-stats",
+          "name": "borgbackup-job-box-backup.service",
+          "state": "failed",
+          "type": "simple"
+        },
+        "annotations": {
+          "description": "birne.wireguard:9100 failed to (re)start service borgbackup-job-box-backup.service."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-13T22:02:53.028428108Z",
+        "value": "1e+00"
+      },
+      {
+        "labels": {
+          "alertname": "systemd_service_failed",
+          "instance": "ahorn.wireguard:9100",
+          "job": "node-stats",
+          "name": "borgbackup-job-box-backup.service",
+          "state": "failed",
+          "type": "simple"
+        },
+        "annotations": {
+          "description": "ahorn.wireguard:9100 failed to (re)start service borgbackup-job-box-backup.service."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-14T11:12:53.028428108Z",
+        "value": "1e+00"
+      },
+      {
+        "labels": {
+          "alertname": "systemd_service_failed",
+          "instance": "kfbox.wireguard:9100",
+          "job": "node-stats",
+          "name": "borgbackup-job-box-backup.service",
+          "state": "failed",
+          "type": "simple"
+        },
+        "annotations": {
+          "description": "kfbox.wireguard:9100 failed to (re)start service borgbackup-job-box-backup.service."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-14T06:29:53.028428108Z",
+        "value": "1e+00"
+      },
+      {
+        "labels": {
+          "alertname": "systemd_service_failed",
+          "instance": "porree.wireguard:9100",
+          "job": "node-stats",
+          "name": "borgbackup-job-box-backup.service",
+          "state": "failed",
+          "type": "simple"
+        },
+        "annotations": {
+          "description": "porree.wireguard:9100 failed to (re)start service borgbackup-job-box-backup.service."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-13T15:16:53.028428108Z",
+        "value": "1e+00"
+      },
+      {
+        "labels": {
+          "alertname": "uptime",
+          "instance": "kfbox.wireguard:9100",
+          "job": "node-stats"
+        },
+        "annotations": {
+          "description": "Uptime monster: kfbox.wireguard:9100 has been up for more than 30 days."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-14T06:29:53.028428108Z",
+        "value": "1.0612537069444579e+02"
+      },
+      {
+        "labels": {
+          "alertname": "uptime",
+          "instance": "porree.wireguard:9100",
+          "job": "node-stats"
+        },
+        "annotations": {
+          "description": "Uptime monster: porree.wireguard:9100 has been up for more than 30 days."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-13T15:16:53.028428108Z",
+        "value": "1.6288390078703839e+02"
+      },
+      {
+        "labels": {
+          "alertname": "uptime",
+          "instance": "birne.wireguard:9100",
+          "job": "node-stats"
+        },
+        "annotations": {
+          "description": "Uptime monster: birne.wireguard:9100 has been up for more than 30 days."
+        },
+        "state": "firing",
+        "activeAt": "2023-04-13T09:39:53.028428108Z",
+        "value": "6.518915541666802e+01"
+      }
+    ]
+  }
+}
