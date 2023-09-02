@@ -33,8 +33,10 @@ const Table = struct {
             print("Tried to add row with {} columns, while table is {} wide", .{ row.len, self.nCols });
             return error.WrongNumberOfColumns;
         } else {
+            print("ADDING {s}\n", .{row});
             try self.rows.append(row);
         }
+        print("ROWS is now {s}\n", .{self.rows.items});
 
         return;
     }
@@ -57,12 +59,16 @@ const Table = struct {
             }
         }
 
+        try out.appendSlice("| ");
+
         for (self.rows.items) |row| {
             for (0..self.nCols) |i| {
-                print(" {s} ({}) |", .{ row[i], i });
+                // print(" {s} ({}) |", .{ row[i], i });
+                try out.appendSlice(row[i]);
             }
 
-            print("\n", .{});
+            // print("\n", .{});
+            try out.append('\n');
         }
 
         // print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
@@ -119,8 +125,8 @@ pub fn main() !void {
     const alerts = try std.json.parseFromSlice(Alerts, allocator, test_json, .{ .ignore_unknown_fields = true });
     defer alerts.deinit();
 
-    print("{s}\n", .{alerts.value.status});
-    print("{?s}\n", .{alerts.value.data.alerts[0].state});
+    // print("{s}\n", .{alerts.value.status});
+    // print("{?s}\n", .{alerts.value.data.alerts[0].state});
 
     var max_lengths = [_]usize{ 0, 0, 0, 0 };
 
@@ -131,40 +137,40 @@ pub fn main() !void {
         max_lengths[3] = @max(max_lengths[3], a.annotations.description.len);
     }
 
-    print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
-        "Instance",
-        "State",
-        "Alert",
-        "Description",
-        max_lengths[0],
-        max_lengths[1],
-        max_lengths[2],
-        max_lengths[3],
-    });
+    // print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
+    //     "Instance",
+    //     "State",
+    //     "Alert",
+    //     "Description",
+    //     max_lengths[0],
+    //     max_lengths[1],
+    //     max_lengths[2],
+    //     max_lengths[3],
+    // });
 
-    print("├─{?s:-<[4]}─┼─{?s:-<[5]}─┼─{?s:-<[6]}─┼─{?s:-<[7]}─┤\n", .{
-        "",
-        "",
-        "",
-        "",
-        max_lengths[0],
-        max_lengths[1],
-        max_lengths[2],
-        max_lengths[3],
-    });
+    // print("├─{?s:-<[4]}─┼─{?s:-<[5]}─┼─{?s:-<[6]}─┼─{?s:-<[7]}─┤\n", .{
+    //     "",
+    //     "",
+    //     "",
+    //     "",
+    //     max_lengths[0],
+    //     max_lengths[1],
+    //     max_lengths[2],
+    //     max_lengths[3],
+    // });
 
-    for (alerts.value.data.alerts) |a| {
-        print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
-            a.labels.instance,
-            a.state,
-            a.labels.alertname,
-            a.annotations.description,
-            max_lengths[0],
-            max_lengths[1],
-            max_lengths[2],
-            max_lengths[3],
-        });
-    }
+    // for (alerts.value.data.alerts) |a| {
+    //     print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
+    //         a.labels.instance,
+    //         a.state,
+    //         a.labels.alertname,
+    //         a.annotations.description,
+    //         max_lengths[0],
+    //         max_lengths[1],
+    //         max_lengths[2],
+    //         max_lengths[3],
+    //     });
+    // }
 
     var outputTable = Table.init(4, allocator);
 
@@ -181,8 +187,9 @@ pub fn main() !void {
 
     // TODO this should just return the table a string instaed of dir
     const output = try outputTable.string();
+    _ = output;
 
-    print("{s}", .{output});
+    // print("{s}", .{output});
 }
 const Alerts = struct {
     status: []u8,
@@ -247,7 +254,7 @@ fn getJSON(url: []const u8, allocator: std.mem.Allocator) ![]u8 {
     // read the entire response body, but only allow it to allocate 100kb of memory
     const body = try req.reader().readAllAlloc(allocator, 102400);
 
-    print("Body was {s}\n", .{body});
+    // print("Body was {s}\n", .{body});
 
     defer allocator.free(body);
 
