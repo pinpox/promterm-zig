@@ -1,19 +1,117 @@
 const std = @import("std");
-const allocator = std.heap.page_allocator;
+// const allocator = std.heap.page_allocator;
 
 const print = std.debug.print;
+const prometheus_url = "https://vpn.prometheus.pablo.tools/api/v1/alerts";
+
+fn red(in: []u8) []u8 {
+    return in;
+}
+
+const Field = []u8;
+const Row = []Field;
+
+const Table = struct {
+    rows: std.ArrayList(Row),
+    nCols: usize,
+    allocator: std.mem.Allocator,
+
+    pub fn init(nCols: usize, allocator: std.mem.Allocator) Table {
+        var rows = std.ArrayList(Row).init(std.heap.page_allocator);
+        defer rows.deinit();
+        return Table{ .rows = rows, .nCols = nCols, .allocator = allocator };
+    }
+
+    pub fn empty(self: Table) bool {
+        return self.rows.items.len == 0;
+    }
+
+    pub fn addRow(self: *Table, row: Row) !void {
+
+        // Check the row has the correct number of colums
+        if ((row.len != self.nCols) and !self.empty()) {
+            print("Tried to add row with {} columns, while table is {} wide", .{ row.len, self.nCols });
+            return error.WrongNumberOfColumns;
+        } else {
+            try self.rows.append(row);
+        }
+
+        return;
+    }
+
+    pub fn string(self: Table) ![]u8 {
+        var out = std.ArrayList(u8).init(self.allocator);
+        defer out.deinit();
+
+        var colWidths = try self.allocator.alloc(usize, self.nCols);
+        defer self.allocator.free(colWidths);
+
+        if (self.empty()) {
+            return "";
+        }
+
+        // Find widest row for each column
+        for (0..self.nCols) |i| {
+            for (self.rows.items) |row| {
+                colWidths[i] = @max(colWidths[i], row[i].len);
+            }
+        }
+
+        for (self.rows.items) |row| {
+            for (0..self.nCols) |i| {
+                print(" {s} ({}) |", .{ row[i], i });
+            }
+
+            print("\n", .{});
+        }
+
+        // print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
+        //     "Instance",
+        //     "State",
+        //     "Alert",
+        //     "Description",
+        //     max_lengths[0],
+        //     max_lengths[1],
+        //     max_lengths[2],
+        //     max_lengths[3],
+        // });
+
+        //     for (0.., row.items) |i, c| {
+        //         print("cols {} len: {} {s}\n", .{ i, c.len, c });
+
+        //         //     colWidth.items[i] = @max(colWidth.items[i], c.len);
+        //     }
+
+        // for (self.rows.items) |row| {
+        //     try colWidth.append(0);
+        //     print("Row len: {}\n", .{row.items.len});
+        //     for (0.., row.items) |i, c| {
+        //         print("cols {} len: {} {s}\n", .{ i, c.len, c });
+
+        //         //     colWidth.items[i] = @max(colWidth.items[i], c.len);
+        //     }
+        // }
+
+        // for (self.rows.items) |row| {
+        //     for (row.items) |column| {
+        //         try out.appendSlice(column);
+        //         try out.append(' ');
+        //     }
+        //     try out.append('\n');
+        // }
+        return out.items;
+    }
+};
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    print("All your {s} are belong to us.\n", .{"codebase"});
+    var instance: std.heap.GeneralPurposeAllocator(.{}) = .{};
 
-    const url = "https://vpn.prometheus.pablo.tools/api/v1/alerts";
+    defer std.debug.assert(instance.deinit() == .ok);
 
-    var json = getJSON(url) catch |err| blk: {
-        // do things
-        // print("{e}", err);
-        // print("unable to add one: {s}\n", .{@errorName(err)});
-        print("Failed to fetch {s}: {s}\n", .{ url, @errorName(err) });
+    const allocator = instance.allocator();
+
+    var json = getJSON(prometheus_url, allocator) catch |err| blk: {
+        print("Failed to fetch {s}: {s}\n", .{ prometheus_url, @errorName(err) });
         break :blk "";
     };
     _ = json;
@@ -68,7 +166,23 @@ pub fn main() !void {
         });
     }
 
-    // TODO print: Instance, State, Alert, Description
+    var outputTable = Table.init(4, allocator);
+
+    for (alerts.value.data.alerts) |a| {
+        var r = [_][]u8{
+            a.labels.instance,
+            a.state,
+            a.labels.alertname,
+            a.annotations.description,
+        };
+
+        try outputTable.addRow(&r);
+    }
+
+    // TODO this should just return the table a string instaed of dir
+    const output = try outputTable.string();
+
+    print("{s}", .{output});
 }
 const Alerts = struct {
     status: []u8,
@@ -94,10 +208,12 @@ const Alerts = struct {
     },
 };
 
-fn getJSON(url: []const u8) ![]u8 {
+fn getJSON(url: []const u8, allocator: std.mem.Allocator) ![]u8 {
     var client = std.http.Client{
         .allocator = allocator,
     };
+
+    defer client.deinit();
 
     // we can `catch unreachable` here because we can guarantee that this is a valid url.
     const uri = try std.Uri.parse(url);
