@@ -34,7 +34,10 @@ const Table = struct {
             return error.WrongNumberOfColumns;
         } else {
             print("ADDING {s}\n", .{row});
-            try self.rows.append(row);
+
+            const memory = try self.allocator.alloc(Row, 1);
+            defer self.allocator.free(memory);
+            try self.rows.append(memory);
         }
         print("ROWS is now {s}\n", .{self.rows.items});
 
