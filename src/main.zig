@@ -1,6 +1,4 @@
 const std = @import("std");
-// const allocator = std.heap.page_allocator;
-
 const print = std.debug.print;
 const prometheus_url = "https://vpn.prometheus.pablo.tools/api/v1/alerts";
 
@@ -68,15 +66,14 @@ const Table = struct {
             }
         }
 
+        // Build output
         try out.appendSlice("| ");
 
         for (self.rows.items) |row| {
             for (0..self.nCols) |i| {
-                // print(" {s} ({}) |", .{ row[i], i });
                 try out.appendSlice(row[i]);
             }
 
-            // print("\n", .{});
             try out.append('\n');
         }
 
@@ -91,12 +88,6 @@ const Table = struct {
         //     max_lengths[3],
         // });
 
-        //     for (0.., row.items) |i, c| {
-        //         print("cols {} len: {} {s}\n", .{ i, c.len, c });
-
-        //         //     colWidth.items[i] = @max(colWidth.items[i], c.len);
-        //     }
-
         // for (self.rows.items) |row| {
         //     try colWidth.append(0);
         //     print("Row len: {}\n", .{row.items.len});
@@ -107,13 +98,6 @@ const Table = struct {
         //     }
         // }
 
-        // for (self.rows.items) |row| {
-        //     for (row.items) |column| {
-        //         try out.appendSlice(column);
-        //         try out.append(' ');
-        //     }
-        //     try out.append('\n');
-        // }
         return out.items;
     }
 };
@@ -196,7 +180,7 @@ pub fn main() !void {
         try outputTable.addRow(&r);
     }
 
-    // TODO this should just return the table a string instaed of dir
+    // TODO For some reason printing segfaults. Fix later
     const output = try outputTable.string();
     _ = output;
 
