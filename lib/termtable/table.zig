@@ -44,20 +44,57 @@ const Table = struct {
         }
     }
 
-    pub fn getStringTable(self: *Table) ![]const u8 {
+    pub fn getStringTable(self: *Table, allocator: Allocator) ![]const u8 {
         var out = std.ArrayList(u8).init(std.heap.page_allocator);
+
+        // TODO make this a dynamic length
+        // defer gpa.free(colWidths);
+        var colWidths = [_]usize{ 0, 0, 0, 0, 0, 0, 0, 0 };
+
+        for (0.., self.rows.items) |n, got| {
+            var col_index = @mod(n, self.stride);
+            // Find widest row for each column
+            colWidths[col_index] = @max(colWidths[col_index], self.getString(got).len);
+        }
+
+        std.debug.print("WIDTHS: {any}\n", .{colWidths});
 
         for (0.., self.rows.items) |n, got| {
             var col_index = @mod(n, self.stride);
 
-            std.debug.print("{}", .{col_index});
+            // std.debug.print("{}", .{col_index});
 
             if (col_index == 0 and n > 0) {
                 try out.appendSlice("\n");
             }
 
             try out.appendSlice(" ");
-            try out.appendSlice(self.getString(got));
+            const string = try std.fmt.allocPrint(
+                allocator,
+                "{?s: <[1]}",
+                .{ self.getString(got), col_index },
+            );
+            defer allocator.free(string);
+
+            try out.appendSlice(string);
+            // format(writer: anytype, comptime fmt: []const u8, args: anytype) !void
+            // TODO: Pad with max column width
+            //
+            //
+            //
+            // print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
+            //     "Instance",
+            //     "State",
+            //     "Alert",
+            //     "Description",
+            //     max_lengths[0],
+            //     max_lengths[1],
+            //     max_lengths[2],
+            //     max_lengths[3],
+            // });
+            //
+            //
+            // try out.appendSlice(self.getString(got));
             try out.appendSlice(" |");
         }
 
@@ -112,7 +149,7 @@ test "output full table" {
     try table.addRow(testing.allocator, row1);
     try table.addRow(testing.allocator, row2);
 
-    const got = try table.getStringTable();
+    const got = try table.getStringTable(testing.allocator);
     try testing.expectEqualStrings(expected, got);
 }
 
