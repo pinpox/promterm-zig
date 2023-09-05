@@ -2,105 +2,7 @@ const std = @import("std");
 const print = std.debug.print;
 const prometheus_url = "https://vpn.prometheus.pablo.tools/api/v1/alerts";
 
-fn red(in: []u8) []u8 {
-    return in;
-}
-
-const Field = []u8;
-const Row = []Field;
-
-const Table = struct {
-    rows: std.ArrayList(Row),
-    nCols: usize,
-    allocator: std.mem.Allocator,
-
-    pub fn init(nCols: usize, allocator: std.mem.Allocator) Table {
-        var rows = std.ArrayList(Row).init(std.heap.page_allocator);
-        defer rows.deinit();
-        return Table{ .rows = rows, .nCols = nCols, .allocator = allocator };
-    }
-
-    pub fn empty(self: Table) bool {
-        return self.rows.items.len == 0;
-    }
-
-    pub fn addRow(self: *Table, row: Row) !void {
-
-        // Check the row has the correct number of colums
-        if ((row.len != self.nCols) and !self.empty()) {
-            print("Tried to add row with {} columns, while table is {} wide", .{ row.len, self.nCols });
-            return error.WrongNumberOfColumns;
-        } else {
-            print("ADDING {s}\n", .{row});
-
-            // TODO fix this. Currently broken
-            try self.rows.append(row);
-
-            // const memory = try self.allocator.create(Row);
-            // try self.rows.append(memory);
-
-            // const memory = try self.allocator.alloc(Row, 1);
-            // defer self.allocator.free(memory);
-            // try self.rows.append(memory);
-        }
-        print("ROWS is now {s}\n", .{self.rows.items});
-
-        return;
-    }
-
-    pub fn string(self: Table) ![]u8 {
-        var out = std.ArrayList(u8).init(self.allocator);
-        defer out.deinit();
-
-        var colWidths = try self.allocator.alloc(usize, self.nCols);
-        defer self.allocator.free(colWidths);
-
-        if (self.empty()) {
-            return "";
-        }
-
-        // Find widest row for each column
-        for (0..self.nCols) |i| {
-            for (self.rows.items) |row| {
-                colWidths[i] = @max(colWidths[i], row[i].len);
-            }
-        }
-
-        // Build output
-        try out.appendSlice("| ");
-
-        for (self.rows.items) |row| {
-            for (0..self.nCols) |i| {
-                try out.appendSlice(row[i]);
-            }
-
-            try out.append('\n');
-        }
-
-        // print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
-        //     "Instance",
-        //     "State",
-        //     "Alert",
-        //     "Description",
-        //     max_lengths[0],
-        //     max_lengths[1],
-        //     max_lengths[2],
-        //     max_lengths[3],
-        // });
-
-        // for (self.rows.items) |row| {
-        //     try colWidth.append(0);
-        //     print("Row len: {}\n", .{row.items.len});
-        //     for (0.., row.items) |i, c| {
-        //         print("cols {} len: {} {s}\n", .{ i, c.len, c });
-
-        //         //     colWidth.items[i] = @max(colWidth.items[i], c.len);
-        //     }
-        // }
-
-        return out.items;
-    }
-};
+const termtable = @import("../lib/termtable/table.zig");
 
 pub fn main() !void {
     var instance: std.heap.GeneralPurposeAllocator(.{}) = .{};
@@ -165,7 +67,7 @@ pub fn main() !void {
     //     });
     // }
 
-    var outputTable = Table.init(4, allocator);
+    var outputTable = termtable.Table.init(4, allocator);
 
     for (alerts.value.data.alerts) |a| {
 
@@ -262,35 +164,6 @@ fn getJSON(url: []const u8, allocator: std.mem.Allocator) ![]u8 {
 //     try list.append(42);
 //     try std.testing.expectEqual(@as(i32, 42), list.pop());
 // }
-
-test "creating a 4x3 table" {
-
-    // Table:
-    const expected =
-        \\| h1 | h2 | h3 | h4 |
-        \\| a  | b  | c  | d  |
-        \\| e  | f  | g  | h  |
-        \\| i  | j  | k  | l  |
-    ;
-
-    // Create table with 4 columns
-    var table = Table.init(4, std.testing.allocator);
-
-    // Create rows
-    var row1 = Row{ "h1", "h2", "h3", "h4" };
-    var row2 = Row{ "a", "b", "c", "d" };
-    var row3 = Row{ "e", "f", "g", "h" };
-    var row4 = Row{ "i", "j", "k", "l" };
-
-    // Add rows to table
-    table.addRow(row1);
-    table.addRow(row2);
-    table.addRow(row3);
-    table.addRow(row4);
-
-    // Get formatted table
-    try std.testing.expect(table.string() == expected);
-}
 
 const test_json =
     \\{
