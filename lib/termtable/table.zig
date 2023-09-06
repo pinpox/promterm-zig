@@ -44,8 +44,7 @@ const Table = struct {
         }
     }
 
-    pub fn getStringTable(self: *Table, allocator: Allocator) ![]const u8 {
-        var out = std.ArrayList(u8).init(std.heap.page_allocator);
+    pub fn render(self: *Table, writer: anytype, allocator: Allocator) !void {
 
         // TODO make this a dynamic length
         // defer gpa.free(colWidths);
@@ -64,11 +63,14 @@ const Table = struct {
 
             // std.debug.print("{}", .{col_index});
 
-            if (col_index == 0 and n > 0) {
-                try out.appendSlice("\n");
+            if (col_index == 0) {
+                if (n > 0) {
+                    try writer.writeAll("\n");
+                }
+                try writer.writeAll("|");
             }
 
-            try out.appendSlice(" ");
+            try writer.writeAll(" ");
             const string = try std.fmt.allocPrint(
                 allocator,
                 "{?s: <[1]}",
@@ -76,7 +78,7 @@ const Table = struct {
             );
             defer allocator.free(string);
 
-            try out.appendSlice(string);
+            try writer.writeAll(string);
             // format(writer: anytype, comptime fmt: []const u8, args: anytype) !void
             // TODO: Pad with max column width
             //
@@ -95,10 +97,10 @@ const Table = struct {
             //
             //
             // try out.appendSlice(self.getString(got));
-            try out.appendSlice(" |");
+            try writer.writeAll(" |");
         }
 
-        return out.items;
+        // return out.items;
     }
 
     pub fn getString(self: *Table, string_index: StringIndex) []const u8 {
@@ -149,8 +151,11 @@ test "output full table" {
     try table.addRow(testing.allocator, row1);
     try table.addRow(testing.allocator, row2);
 
-    const got = try table.getStringTable(testing.allocator);
-    try testing.expectEqualStrings(expected, got);
+    var got: std.ArrayListUnmanaged(u8) = .{};
+    const w = got.writer(testing.allocator);
+
+    try table.render(w, testing.allocator);
+    try testing.expectEqualStrings(expected, got.items);
 }
 
 test "stride of 3" {
