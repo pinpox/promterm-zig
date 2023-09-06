@@ -44,15 +44,15 @@ const Table = struct {
         }
     }
 
-    pub fn render(self: *Table, writer: anytype, allocator: Allocator) !void {
+    pub fn render(self: *Table, writer: anytype) !void {
 
         // TODO make this a dynamic length
-        // defer gpa.free(colWidths);
         var colWidths = [_]usize{ 0, 0, 0, 0, 0, 0, 0, 0 };
+        // defer allocator.free(colWidths);
 
+        // Find widest row for each column
         for (0.., self.rows.items) |n, got| {
             var col_index = @mod(n, self.stride);
-            // Find widest row for each column
             colWidths[col_index] = @max(colWidths[col_index], self.getString(got).len);
         }
 
@@ -71,36 +71,24 @@ const Table = struct {
             }
 
             try writer.writeAll(" ");
-            const string = try std.fmt.allocPrint(
-                allocator,
-                "{?s: <[1]}",
-                .{ self.getString(got), col_index },
-            );
-            defer allocator.free(string);
+            // std.debug.print("Formatting {s} with width {}\n", .{ self.getString(got), colWidths[col_index] });
 
-            try writer.writeAll(string);
-            // format(writer: anytype, comptime fmt: []const u8, args: anytype) !void
-            // TODO: Pad with max column width
-            //
-            //
-            //
-            // print("| {?s: <[4]} | {?s: <[5]} | {?s: <[6]} | {?s: <[7]} |\n", .{
-            //     "Instance",
-            //     "State",
-            //     "Alert",
-            //     "Description",
-            //     max_lengths[0],
-            //     max_lengths[1],
-            //     max_lengths[2],
-            //     max_lengths[3],
-            // });
-            //
-            //
-            // try out.appendSlice(self.getString(got));
+            // const string = try std.fmt.allocPrint(
+            //     allocator,
+            //     "{?s: <[1]}",
+            //     .{ self.getString(got), colWidths[col_index] },
+            // );
+            // defer allocator.free(string);
+
+            // Pad with max column width
+            try std.fmt.format(
+                writer,
+                "{?s: <[1]}",
+                .{ self.getString(got), colWidths[col_index] },
+            );
+
             try writer.writeAll(" |");
         }
-
-        // return out.items;
     }
 
     pub fn getString(self: *Table, string_index: StringIndex) []const u8 {
@@ -152,9 +140,11 @@ test "output full table" {
     try table.addRow(testing.allocator, row2);
 
     var got: std.ArrayListUnmanaged(u8) = .{};
+
+    defer got.deinit(testing.allocator);
     const w = got.writer(testing.allocator);
 
-    try table.render(w, testing.allocator);
+    try table.render(w);
     try testing.expectEqualStrings(expected, got.items);
 }
 
